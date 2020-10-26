@@ -1,0 +1,11 @@
+#! GitIgnore
+# -*- coding: utf-8 -*-
+
+# Archivos de caché de Python.
+/**/__pycache__/
+
+# Archivos del entorno virtual.
+/Include/
+/Lib/
+/Scripts/
+/pyvenv.cfg
