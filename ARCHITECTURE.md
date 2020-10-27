@@ -25,7 +25,7 @@ comenzar a enviar menajes, por ejemplo, *"¡Hola Mundo!."*.
 +----------------------------------------------------------------------------+
 | CABECERA:                                                                  |
 | {                                                                          |
-|     'protocol': 'n-transfer',                                              |
+|     'protocol': 'ntp',                                              |
 |     'version': '0.0.1',                                                    |
 |     'mime': 'text/plain',                                                  |
 |     'encoding': 'utf-8',                                                   |
