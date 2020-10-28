@@ -22,16 +22,11 @@ version_info = __version__.split('.').append('preview')
 ##############################################################################
 
 # Módulos de la librería estándar.
-import zlib
-import socket
 import json
-
-from typing import (
-    Text,
-    BinaryIO,
-    Tuple,
-    NewType,
-)
+import socket
+import zlib
+import mimetypes
+from typing import IO, BinaryIO, NewType, Text, Tuple, Union
 
 ##############################################################################
 ################################ CONSTANTES. #################################
@@ -83,6 +78,30 @@ class Transfer:
 
         # Devolver la cantidad de bytes enviados.
         return len(msg)
+
+    def send_file(self, path: Union[Text, IO], binary: bool = True) -> int:
+        """Envía un archivo."""
+
+        # Crear el lector en caso de recibir una ruta.
+        if isinstance(path, str):
+            mode = 'rb' if binary else 'r'
+            path = open(path, mode)
+
+        # Obtener el contenido.
+        content = path.read()
+
+        # Obtener el tipo MIME.
+        mime = mimetypes.guess_type(path.name)
+        mime = mime[1] if mime[1] else mime[0]
+
+        # Obtener la codificación.
+        try: encoding = path.encoding
+        except AttributeError: encoding = None
+
+        # Cerrar el puntero al archivo, si fué creado aquí.
+        if isinstance(path, str): path.close()
+
+        return self.send(content, mime, encoding)
 
     def receive(self, bufsize: int = bufsize) -> Tuple[bytes, dict]:
         """Recibe contenido de la conexión."""
