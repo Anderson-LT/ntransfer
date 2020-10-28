@@ -9,3 +9,6 @@
 /Lib/
 /Scripts/
 /pyvenv.cfg
+
+# Archivo de configuración de NTransfer.
+/transfer/ntp.json
