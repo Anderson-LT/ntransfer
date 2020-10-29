@@ -32,6 +32,8 @@ if url.startswith('#'):
     nm = url[1:]
 else:
     conn = url.split(':')
+    conn[1] = int(conn[1])
+    conn = tuple(conn)
     nm = None
 
 server = confirm('¿Desea ser un servidor?', ' ([y] Sí | [n] No): ')
