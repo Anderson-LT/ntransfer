@@ -35,6 +35,7 @@ from typing import IO, BinaryIO, NewType, Text, Tuple, Union
 # Valores más comunes de la cabecera.
 PROTO = 'ntp'
 VERSION = __version__[:]
+UTF8 = 'utf-8'
 
 # Tamaños en bytes.
 B = 1
@@ -52,7 +53,7 @@ class Transfer:
 
         self.connection = connection
 
-    def send(self, data: bytes, mime: str, encoding: str = 'utf-8') -> int:
+    def send(self, data: bytes, mime: str, encoding: str = UTF8) -> int:
         """Envia un objeto binario utilizando el protocolo NTP."""
 
         # Lista con las partes del cuerpo del mensaje.
@@ -111,7 +112,7 @@ class Transfer:
 
         # Obtener la cabecera y decodificarla.
         header = self.connection.recv(int(hlen))
-        header = header.decode('ansi')
+        header = header.decode(UTF8)
         header = json.loads(header)
 
         # Obtener tamaño del mensaje.
@@ -154,14 +155,14 @@ class Transfer:
             sort_keys=True)
 
         # Compilar la cabecera.
-        header = bytes(header, 'ansi')
+        header = bytes(header, UTF8)
 
         return header
 
     def __read_header(self, header):
 
         # Descodificar la cabecera.
-        header = header.decode('ansi')
+        header = header.decode(UTF8)
         header = json.loads(header)
 
         return header
@@ -177,7 +178,7 @@ class Transfer:
         elif len(h) == 2: h = '00' + h
         elif len(h) == 1: h = '000' + h
         
-        return bytes(h, 'ansi')
+        return bytes(h, UTF8)
 
     def __len_content(self, content):
 
