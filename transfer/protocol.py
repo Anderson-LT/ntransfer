@@ -26,7 +26,7 @@ import json
 import socket
 import zlib
 import mimetypes
-from typing import IO, BinaryIO, NewType, Text, Tuple, Union
+from typing import IO, BinaryIO, NewType, Text, Tuple, Union, Callable
 
 ##############################################################################
 ################################ CONSTANTES. #################################
@@ -104,7 +104,11 @@ class Transfer:
 
         return self.send(content, mime, encoding)
 
-    def receive(self, bufsize: int = bufsize) -> Tuple[bytes, dict]:
+    def receive(
+        self, 
+        bufsize: int = bufsize,
+        confirm: Callable[[dict], bool] = lambda _: True,
+    ) -> Tuple[bytes, dict]:
         """Recibe contenido de la conexión."""
 
         # Obtener tamaño de la cabecera.
@@ -118,6 +122,9 @@ class Transfer:
         # Obtener tamaño del mensaje.
         size = header['size']
 
+        # Verificar la obtención del mensaje.
+        save = confirm(header)
+
         # Partes del mensaje y cantidad de datos recibidos.
         msg = []
         rec = 0
@@ -129,9 +136,12 @@ class Transfer:
             r = self.connection.recv(bufsize) # Recibir una parte del mensaje.
             rec += len(r) # Contar el tamaño del mensaje recibido.
             msg.append(r) # Almacenar las partes del mensaje recibidas.
+            # Evita ocupar RAM innecesaria cuando no se desea el archivo.
+            if not save: msg = []
 
         # Juntar todas las partes del mensaje.
-        content = b''.join(msg)
+        if save: content = b''.join(msg)
+        else: content = None
 
         # Devolver el mensaje y la cabecera.
         return content, header
