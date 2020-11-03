@@ -23,9 +23,9 @@ version_info = __version__.split('.').append('preview')
 
 # Módulos de la librería estándar.
 import json
+import mimetypes
 import socket
 import zlib
-import mimetypes
 from typing import IO, BinaryIO, NewType, Text, Tuple, Union
 
 ##############################################################################
@@ -41,7 +41,15 @@ UTF8 = 'utf-8'
 B = 1
 KB = B * 1024
 
+##############################################################################
+################################ TYPING. #####################################
+##############################################################################
+
 Socket = NewType('Socket', socket.socket)
+
+##############################################################################
+################################ CLASES. #####################################
+##############################################################################
 
 class Transfer:
     """Genera una interfaz de alto nivel para Socket."""
@@ -49,12 +57,25 @@ class Transfer:
     bufsize = KB
 
     def __init__(self, connection: Socket) -> None:
-        """Constructor."""
+        """Constructor.
+        
+        :connection: Recibe un objeto Socket ya conectado.
+        """
 
         self.connection = connection
 
-    def send(self, data: bytes, mime: str, encoding: str = UTF8) -> int:
-        """Envia un objeto binario utilizando el protocolo NTP."""
+    def send(self, data: bytes, mime: Text, encoding: Text = UTF8) -> int:
+        """Envia un objeto binario utilizando el protocolo NTP.
+        
+        :data: Son los datos a enviar.
+        :mime: Tipo MIME del objeto a enviar.
+        :encoding: Codificación del objeto a envia (solo para texto).
+
+        Devuelve el número de octetos enviados.
+
+        Los argumentos mime y encoding solo son meta-datos y su correcta 
+        interpretación depende del cliente utilizado.
+        """
 
         # Lista con las partes del cuerpo del mensaje.
         message = []
@@ -81,7 +102,17 @@ class Transfer:
         return len(msg)
 
     def send_file(self, path: Union[Text, IO], binary: bool = True) -> int:
-        """Envía un archivo."""
+        """Envía un archivo.
+        
+        :path:   Es la ruta donde se encuentra el archivo, también puede pasar
+                 el objeto retornado por la función "open", el único requisito
+                 es tener acceso de lectura.
+        :binary: Es un "bool" indicando si el objeto usa una codificación
+                 binaria, es decir, una imagen, un vídeo, etc...
+
+        Esto es solo un envoltorio para el método "send", también devuelve
+        el número de octetos enviados.
+        """
 
         # Crear el lector en caso de recibir una ruta.
         if isinstance(path, str):
@@ -105,7 +136,14 @@ class Transfer:
         return self.send(content, mime, encoding)
 
     def receive(self, bufsize: int = bufsize) -> Tuple[bytes, dict]:
-        """Recibe contenido de la conexión."""
+        """Recibe contenido de la conexión.
+        
+        :bufsize: Es el número máximo de octetos que recibirán en cada 
+                  solicitud, por defecto es el atributo "Transfer.bufsize", 
+                  debe ser un entero.
+        
+        Retorna una tupla conteniendo el mensaje y su cabecera.
+        """
 
         # Obtener tamaño de la cabecera.
         hlen = self.connection.recv(4)
@@ -184,3 +222,7 @@ class Transfer:
 
         # Tamaño de la cabecera.
         return len(content)
+
+##############################################################################
+################################### FIN. #####################################
+##############################################################################
