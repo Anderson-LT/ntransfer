@@ -7,9 +7,13 @@ Lee la información de un archivo de configuración.
 """
 
 from json import dump, load
-from os.path import dirname, abspath
+from os.path import dirname, abspath, join as join_path
+from typing import (
+    Dict,
+    Text,
+)
 
-CONFIG_FILE = abspath(dirname(__file__)) + '/ntp.json'
+CONFIG_FILE = join_path(abspath(dirname(__file__)), 'ntp.json')
 BASE_CONFIG = {
     'colors': {
         'nickname': 'red',
@@ -23,23 +27,32 @@ BASE_CONFIG = {
     },
 }
 
-def get_config(file=CONFIG_FILE):
-    """Carga la configuración de un archivo."""
+def get_config(file: Text = CONFIG_FILE):
+    """Carga la configuración de un archivo.
+    
+    :file: Es la ruta donde se buscará la configuración.
+    """
 
     with open(file, 'rt') as fp:
         file = load(fp)
 
     return file
 
-def set_config(config, file=CONFIG_FILE):
-    """Establece la configuración de un archivo."""
+def set_config(config: Dict[Dict, Dict], file: Text = CONFIG_FILE):
+    """Establece la configuración de un archivo.
+    
+    :file:   Es la ruta donde se guardará la configuración.
+    :config: Debe ser un diccionario conteniendo otros dos diccionarios, cada 
+             uno contiene un aspecto de configuración de NTP (Ver la constante 
+             "CONFIG_FILE").
+    """
 
     with open(file, 'wt') as fp:
         dump(
             config, 
-            fp,
-            indent=4,
-            sort_keys=True,
+            fp, 
+            indent=4,        # Identar el archivo.
+            sort_keys=True,  # Ordenar las claves.
         )
 
     return
