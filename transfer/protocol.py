@@ -27,7 +27,16 @@ import mimetypes
 import socket
 import zlib
 import mimetypes
-from typing import IO, BinaryIO, NewType, Text, Tuple, Union, Callable
+from typing import (
+    IO, 
+    BinaryIO, 
+    NewType, 
+    Text, 
+    Tuple, 
+    Union, 
+    Callable, 
+    Optional
+)
 
 ##############################################################################
 ################################ CONSTANTES. #################################
@@ -49,8 +58,24 @@ KB = B * 1024
 Socket = NewType('Socket', socket.socket)
 
 ##############################################################################
+############################### EXCEPCIONES. #################################
+##############################################################################
+
+class ConnectionBrokenError(ConnectionError):
+    """Excepción lanzada cuando la conexión se rompe.
+
+    La conexión se considera rota cuando socket.socket.recv() devuelve b''.
+    """
+
+##############################################################################
 ################################ CLASES. #####################################
 ##############################################################################
+
+class FakeClass:
+    """Simula una clase.
+    
+    Útil si se desa usar una función como un método.
+    """
 
 class Transfer:
     """Genera una interfaz de alto nivel para Socket."""
@@ -140,21 +165,31 @@ class Transfer:
         self, 
         bufsize: int = bufsize,
         confirm: Callable[[dict], bool] = lambda _: True,
-    ) -> Tuple[bytes, dict]:
+        buffer: Optional[Callable[[bytes], None]] = None,
+        per_cent: Callable[[int], None] = lambda _: None,
+    ) -> Tuple[Optional[bytes], dict]:
         """Recibe contenido de la conexión.
         
         :bufsize: Es el número máximo de octetos que recibirán en cada 
                   solicitud, por defecto es el atributo "Transfer.bufsize", 
                   debe ser un entero.
+        :confirm: Debe ser una función que recibe la cabecera y esta  función 
+                  debe decidir si recibir el archivo.
+        :buffer: Debe ser una función o método que se puede usar como remplazo
+                 de buffer, debe recibir bytes.
+        :per_cent: Función o método que se llamará con el porcentaje de bytes
+                   recibidos.
         
         Retorna una tupla conteniendo el mensaje y su cabecera.
+        Si confirm devuelve un valor falso o buffer es difrente de None, el 
+        valor de retorno de la función será None.
         """
 
         # Obtener tamaño de la cabecera.
-        hlen = self.connection.recv(4)
+        hlen = self._recv(4)
 
         # Obtener la cabecera y decodificarla.
-        header = self.connection.recv(int(hlen))
+        header = self._recv(int(hlen))
         header = header.decode(UTF8)
         header = json.loads(header)
 
@@ -164,22 +199,39 @@ class Transfer:
         # Verificar la obtención del mensaje.
         save = confirm(header)
 
-        # Partes del mensaje y cantidad de datos recibidos.
-        msg = []
+        # Configurar el búffer.
+        if buffer is None: msg = [] # Crear un buffer.
+        else:
+            msg = FakeClass # Falsear lista.
+            msg.append = buffer # Añadir el buffer como método.
+
+        # Cantidad de datos recibidos.
         rec = 0
+
+        # Calcular cuantas partes se recibirán.
+        parts = size / bufsize
+        cant = parts * bufsize
+        if (size - cant) != 0: parts += 1
+        try: per = cant = 100 / parts
+        except ZeroDivisionError: per = cant = 0
 
         # Recibir el mensaje por partes.
         while rec < size: 
             if rec < bufsize: # En caso de ser la última parte del mensaje.
                 bufsize = size - rec # Fijar el bufér al tamaño del mensaje.
-            r = self.connection.recv(bufsize) # Recibir una parte del mensaje.
+            # Recibir una parte del mensaje.
+            r = self._recv(bufsize) 
             rec += len(r) # Contar el tamaño del mensaje recibido.
             msg.append(r) # Almacenar las partes del mensaje recibidas.
             # Evita ocupar RAM innecesaria cuando no se desea el archivo.
             if not save: msg = []
+            per_cent(per)
+            per += cant
 
-        # Juntar todas las partes del mensaje.
-        if save: content = b''.join(msg)
+        if buffer is None: 
+            # Juntar todas las partes del mensaje.
+            if save: content = b''.join(msg)
+            else: content = None
         else: content = None
 
         # Devolver el mensaje y la cabecera.
@@ -233,6 +285,17 @@ class Transfer:
 
         # Tamaño de la cabecera.
         return len(content)
+
+    def _recv(self, bufsize):
+
+        # Recibir el mensaje.
+        recv = self.connection.recv(bufsize)
+
+        # Verificar el estado de la conexión.
+        if len(recv) == 0: 
+            raise ConnectionBrokenError("La conexión devolvió b''.")
+
+        return recv
 
 ##############################################################################
 ################################### FIN. #####################################
