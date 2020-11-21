@@ -47,6 +47,8 @@ class REPL:
             auto_suggest=AutoSuggestFromHistory(), # Sugerencias basadas en 
         )                                          # el historial.
 
+        self.pf = PromptSession('Ruta donde desea guardar el archivo: ')
+
     def main_loop(self) -> None:
         """Inicia una sesión en el intérprete."""
 
@@ -103,7 +105,7 @@ class REPL:
 
         # Recibir un archivo, si no es texto.
         if rec[1]['mime'] != 'text/plain':
-            path = self.p.prompt('Ruta donde desea guardar el archivo: ')
+            path = self.pf.prompt()
             with open(path, 'wb') as fp:
                 fp.write(rec[0]) # Guardar el archivo.
 
