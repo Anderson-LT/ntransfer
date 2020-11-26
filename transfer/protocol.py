@@ -178,7 +178,7 @@ class Transfer:
         :buffer: Debe ser una función o método que se puede usar como remplazo
                  de buffer, debe recibir bytes.
         :per_cent: Función o método que se llamará con el porcentaje de bytes
-                   recibidos.
+                   recibidos, redondeado a cifras significativas.
         
         Retorna una tupla conteniendo el mensaje y su cabecera.
         Si confirm devuelve un valor falso o buffer es difrente de None, el 
@@ -208,13 +208,6 @@ class Transfer:
         # Cantidad de datos recibidos.
         rec = 0
 
-        # Calcular cuantas partes se recibirán.
-        parts = size / bufsize
-        cant = parts * bufsize
-        if (size - cant) != 0: parts += 1
-        try: per = cant = 100 / parts
-        except ZeroDivisionError: per = cant = 0
-
         # Recibir el mensaje por partes.
         while rec < size: 
             if rec < bufsize: # En caso de ser la última parte del mensaje.
@@ -225,8 +218,8 @@ class Transfer:
             msg.append(r) # Almacenar las partes del mensaje recibidas.
             # Evita ocupar RAM innecesaria cuando no se desea el archivo.
             if not save: msg = []
-            per_cent(per)
-            per += cant
+            # Calcular el porcentaje recibido.
+            per_cent(self._per_cent(rec, size))
 
         if buffer is None: 
             # Juntar todas las partes del mensaje.
@@ -296,6 +289,17 @@ class Transfer:
             raise ConnectionBrokenError("La conexión devolvió b''.")
 
         return recv
+
+    def _per_cent(self, size, total):
+
+        # Obtener el porcentaje.
+        per_cent = size / total
+        per_cent = per_cent * 100
+
+        # Redondear a dos cifras significativas.
+        per_cent = round(per_cent, 2)
+
+        return per_cent
 
 ##############################################################################
 ################################### FIN. #####################################
