@@ -80,16 +80,16 @@ class REPL:
 
         if cmd and cmd[0].startswith('#'): # Ejecutar en caso de ser un comando.
             cmd = cmd[1:] # Eliminar el carácter #.
-            args = split(cmd, False, False) # Separar.
+            args = split(cmd) # Separar.
 
             if args[0] in self.cmd:
                 cmd = self.cmd[args[0]]
                 try: data, mime, encoding = cmd(args)
                 except: 
                     print('Error mientras se procesaba el comando.')
-                    return
                 else: self.t.send(data, mime, encoding)
-                finally: del data, mime, encoding
+                finally: data =  mime = encoding = ''
+                return
             else: print(f'{cmd.title()}: No se reconoce el comando.')
             return
 
