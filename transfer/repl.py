@@ -11,12 +11,13 @@ Ofrece una clase para crear REPLs simples para NTransfer.
 #############################################################################
 
 # Módulos de la librería estándar.
-from typing import Text
+from typing import Text, Dict, Callable, List, Tuple
+from shlex import split
 
 # Módulos del PyPI.
 from prompt_toolkit import print_formatted_text as print
 from prompt_toolkit.formatted_text import FormattedText
-from prompt_toolkit.shortcuts import PromptSession
+from prompt_toolkit.shortcuts import PromptSession, confirm, ProgressBar
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 
@@ -33,13 +34,19 @@ class REPL:
     prompt = '(NTP) '
     nickname = 'IP'
 
-    def __init__(self, transfer: Transfer) -> None:
+    def __init__(self, 
+        transfer: Transfer, 
+        cmds: 
+            Dict[Text, 
+                Callable[[List[Text]], Tuple[bytes, Text, Text]]] = None,
+    ) -> None:
         """Constructor.
 
         :transfer: Es la clase con el protocolo.
         """
 
         self.t = transfer
+        self.cmd = cmds
         
         # Crear el indicador.
         self.p = PromptSession(self.prompt, # Indicador.
@@ -47,6 +54,7 @@ class REPL:
             auto_suggest=AutoSuggestFromHistory(), # Sugerencias basadas en 
         )                                          # el historial.
 
+        # Indicador para guardar archivos.
         self.pf = PromptSession('Ruta donde desea guardar el archivo: ')
 
     def main_loop(self) -> None:
@@ -70,18 +78,20 @@ class REPL:
         Este puede ser sobre-instanciado por una sub-clase.
         """
 
-        cmd = cmd.strip() # Eliminar el exceso de espacios.
-        cmd = cmd.split(' ') # Separar en cada espacio.
+        if cmd and cmd[0].startswith('#'): # Ejecutar en caso de ser un comando.
+            cmd = cmd[1:] # Eliminar el carácter #.
+            args = split(cmd, False, False) # Separar.
 
-        if cmd[0].startswith('#'): # Ejecutar en caso de ser un comando.
-            if cmd[0].startswith('#file'): # Comando para enviar archivo.
-                try: self.t.send_file(cmd[1]) # Enviar el archivo.
-                except OSError as err: 
-                    print('Ocurrió un error:', err)
-            else: print('No se reconoce el comando.')
+            if args[0] in self.cmd:
+                cmd = self.cmd[args[0]]
+                try: data, mime, encoding = cmd(args)
+                except: 
+                    print('Error mientras se procesaba el comando.')
+                    return
+                else: self.t.send(data, mime, encoding)
+                finally: del data, mime, encoding
+            else: print(f'{cmd.title()}: No se reconoce el comando.')
             return
-
-        cmd = ' '.join(cmd) # Rearmar la línea.
 
         # Enviar el mensaje.
         self.t.send(bytes(cmd, 'utf-8'), 'text/plain') 
@@ -101,16 +111,105 @@ class REPL:
         print(style)
 
     def receive(self):
-        rec = self.t.receive() # Recibir el mensaje en crudo.
+        rec = self.t.receive(
+            confirm=self.confirm,
+            per_cent=self.progress_bar) # Recibir el mensaje en crudo.
 
         # Recibir un archivo, si no es texto.
-        if rec[1]['mime'] != 'text/plain':
+        if rec[1]['mime'] != 'text/plain' and rec[0] is not None:
             path = self.pf.prompt()
+            if path == '#cancel': return # Si el usuario cancela el archivo.
             with open(path, 'wb') as fp:
                 fp.write(rec[0]) # Guardar el archivo.
 
+        elif rec[0] is None: pass
+
         # Mostrar el mensaje.
         else: self.print(rec[0].decode(rec[1]['encoding']))
+
+    def confirm(self, header):
+        """Pregunta al usuario si dsea descargar algún archivo."""
+
+        self._file = False # Variable para verificar archivos.
+        if header['mime'] != 'text/plain': # Si es diferente de texto plano.
+            self._file = True
+            size = header['size'] # Tamaño en bytes.
+            if size > 1024: # KiloByte.
+                size = size / 1024
+                size_str = f'{size:.2f} KiB'
+            if int(size) > 1024: # MegaByte.
+                size = size / 1024
+                size_str = f'{size:.2f} MiB'
+            else: # Byte.
+                size_str = f'{size} B'
+
+            yes_no = confirm(
+                f'¿Desea recibir este archivo ({size_str})?',
+                ' ([y] Sí | [n] No): '
+            )
+            if yes_no == False: self._file = False
+            return yes_no
+        else: return True
+
+    def progress_bar(self, pc):
+        """Muestra una barra de progreso."""
+
+        # Verificar que sea un archivo.
+        if self._file == False: return
+        else: 
+            try: self.pb # Verificar que no exista una barra de progreso.
+            except AttributeError: 
+                self._pb = ProgressBar() # Inicializar la barra.
+                self._pb = self._pb.__enter__() # Crear la barra.
+                self.pb = self._pb(range(100)) # Añadir la capacidad máxima.
+
+            self.pb.items_completed = int(pc) # Fijar porcentaje.
+            self.pb.progress_bar.invalidate() # Mostrar porcentaje.
+
+            if pc == 100: # Si la barra está llena.
+                self.pb.done = True # Fija hecho a vedadero.
+                self._pb.__exit__() # Eliminar la barra.
+                del self._pb, self.pb # Liberar memoria.
+
+##############################################################################
+############################## FUNCIONES. ####################################
+##############################################################################
+
+# Definir algunos comandos básicos (comienzan con cmd_).
+# 
+#  Todos los comandos deben comenzar con el prefijo "cmd_", para poderlos 
+#  diferenciar de funciones ordinarias, estos se invocan desde la línea del 
+#  REPL con un # seguido del nombre del comando.
+#
+#  Las funciones de comandos reciben una lista con los argumentos, deben
+#  devolver una tupla conteniendo los siguiente:
+#   ('datos binarios a enviar', 'tipo MIME', 'codificación')
+#
+#  El atributo __doc__ de las funciones, se utiliza como el texto de ayuda
+#  para los comandos.
+#
+
+def cmd_file(args):
+    """Envía un archivo.
+
+    SINTAXÍS: #file ruta_del_archivo
+
+    Si la ruta hacia el archivo contiene espacios, utilizar comillas 
+    simples o dobles para evitar confundirlo con un segundo argumento.
+    """
+
+    with open(args[1], 'rb') as fp: file = fp.read()
+
+    return (file, 'file/download', '')
+
+##############################################################################
+############################### CONSTANTES. ##################################
+##############################################################################
+
+# Comandos básicos.
+CMDS = {
+    'file': cmd_file
+}
 
 ##############################################################################
 ################################## FIN. ######################################
