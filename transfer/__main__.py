@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from socket import socket
-from protocol import Transfer
-from repl import REPL
+from protocol import Transfer, ConnectionBrokenError
+from repl import REPL, CMDS
 from config import get_config, set_config, BASE_CONFIG
 from prompt_toolkit.shortcuts import prompt, confirm
 
@@ -18,13 +18,7 @@ Si tiene guardados atajos, escribalos con el formato:
 Introduzca su dirección: """
 )
 
-while True:
-    try: name = get_config()['connections']
-    except FileNotFoundError: set_config(BASE_CONFIG)
-    except: 
-        print('Error desconocido.')
-        exit(1)
-    else: break
+name = get_config()['connections']
 
 if url.startswith('#'):
     conn = name[url[1:]]
@@ -56,9 +50,15 @@ if server: t = Transfer(c)
 else: t = Transfer(socket)
 
 # Crear e iniciar el REPL.
-repl = REPL(t)
+repl = REPL(t, CMDS)
 if nm: repl.nickname = nm
-repl.main_loop()
+
+# Iniciar el REPL, y manejar los posibles errores.
+try: repl.main_loop()
+except ConnectionBrokenError: print('Conexión finalizada.')
+except ConnectionAbortedError: print('Se ha anulado la conexión.')
+except ConnectionResetError: 
+    print('Se ha forzado la interrupción de la conexión.')
 
 # Cerrar las conexiones.
 if server: c.close()
