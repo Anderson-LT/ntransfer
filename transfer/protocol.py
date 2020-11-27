@@ -207,6 +207,7 @@ class Transfer:
 
         # Cantidad de datos recibidos.
         rec = 0
+        per_cent(0) # Mostrar l porcentaje 0.
 
         # Recibir el mensaje por partes.
         while rec < size: 
