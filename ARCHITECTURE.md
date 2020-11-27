@@ -25,11 +25,11 @@ comenzar a enviar menajes, por ejemplo, *"¡Hola Mundo!."*.
 +----------------------------------------------------------------------------+
 | CABECERA:                                                                  |
 | {                                                                          |
-|     'protocol': 'ntp',                                              |
-|     'version': '0.0.1',                                                    |
-|     'mime': 'text/plain',                                                  |
-|     'encoding': 'utf-8',                                                   |
-|     'size': 14                                                             |
+|     "protocol": "ntp",                                              |
+|     "version": "0.0.1",                                                    |
+|     "mime": "text/plain",                                                  |
+|     "encoding": "utf-8",                                                   |
+|     "size": 14                                                             |
 | }                                                                          |
 +----------------------------------------------------------------------------+
                                                                         |    
@@ -55,11 +55,11 @@ su tamaño en bytes.
 
 ```json
 {
-    'protocol': 'n-transfer',
-    'version': '0.0.1',
-    'mime': 'text/plain',
-    'encoding': 'utf-8',
-    'size': 14
+    "protocol": "n-transfer",
+    "version": "0.0.1",
+    "mime": "text/plain",
+    "encoding": "utf-8",
+    "size": 14
 }
 ```
 
