@@ -11,10 +11,10 @@ Define un protocolo de transferencia simple y de alto nivel para Socket.
 ##############################################################################
 
 __author__ = 'Anderson Lizarazo Tellez'
-__date__ = 'Martes, 27 de Octubre de 2020.'
+__date__ = 'Sábado, 28 de Noviembre de 2020.'
 __copyright__ = '© 2020, Anderson Lizarazo Tellez.'
 __license__ = 'Aurora License 0.1.'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 version_info = __version__.split('.').append('preview')
 
 ##############################################################################
@@ -207,7 +207,7 @@ class Transfer:
 
         # Cantidad de datos recibidos.
         rec = 0
-        per_cent(0) # Mostrar l porcentaje 0.
+        per_cent(0) # Mostrar el porcentaje 0.
 
         # Recibir el mensaje por partes.
         while rec < size: 
