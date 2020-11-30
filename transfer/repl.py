@@ -198,9 +198,18 @@ def cmd_file(args):
     simples o dobles para evitar confundirlo con un segundo argumento.
     """
 
-    with open(args[1], 'rb') as fp: file = fp.read()
+    # Valores por defecto, para errores.
+    file = b'' 
+    mime = 'text/plain'
 
-    return (file, 'file/download', '')
+    try: 
+        with open(args[1], 'rb') as fp: file = fp.read()
+        mime = 'file/download'
+    except OSError: print(f'"{args[1]}" No es una ruta válida.')
+    except PermissionError: 
+        print(f'"{args[1]}" Es una carpeta, solo se admiten archivos.')
+
+    return (file, mime, '')
 
 ##############################################################################
 ############################### CONSTANTES. ##################################
