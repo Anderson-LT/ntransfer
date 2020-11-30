@@ -1,11 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+##############################################################################
+################################ MÓDULOS. ####################################
+##############################################################################
+
+# Módulos de la librería estándar.
+import sys
+from socket import gaierror as GAIError
 from socket import socket
-from protocol import Transfer, ConnectionBrokenError
-from repl import REPL, CMDS
-from config import get_config, set_config, BASE_CONFIG
-from prompt_toolkit.shortcuts import prompt, confirm
+
+# Módulos del PyPI.
+from prompt_toolkit.shortcuts import confirm, prompt
+
+# Módulos propios.
+from config import BASE_CONFIG, get_config, set_config
+from protocol import ConnectionBrokenError, Transfer
+from repl import CMDS, REPL
+from utils import pause
+
+##############################################################################
+############################# RUTINA PRINCIPAL. ##############################
+##############################################################################
 
 # Pedir datos básicos.
 url = prompt(
@@ -18,18 +34,33 @@ Si tiene guardados atajos, escribalos con el formato:
 Introduzca su dirección: """
 )
 
+# Obtener atajos.
 name = get_config()['connections']
 
+# Si es atajo.
 if url.startswith('#'):
-    conn = name[url[1:]]
+    try: conn = name[url[1:]]
+    except KeyError:
+        print('No existe ese atajo.')
+        pause()
+        sys.exit(1)
     conn = tuple(conn)
     nm = url[1:]
 else:
     conn = url.split(':')
-    conn[1] = int(conn[1])
+    try: conn[1] = int(conn[1])
+    except IndexError:
+        print('Sintaxis Inválida.')
+        pause()
+        sys.exit(1)
+    except ValueError:
+        print('Las direcciones solo están conformadas por números.')
+        pause()
+        sys.exit(1)
     conn = tuple(conn)
     nm = None
 
+# Obtener desición.
 server = confirm('¿Desea ser un servidor?', ' ([y] Sí | [n] No): ')
 
 # Crear el socket.
@@ -37,13 +68,25 @@ socket = socket()
 
 if server:
     # Crear la escucha.
-    socket.bind(conn)
+    try: socket.bind(conn)
+    except OSError: 
+        print('La dirección no está disponible para ser usada como servidor.')
+        pause()
+        sys.exit(1)
+    except GAIError:
+        print('No es una dirección válida.')
+        pause()
+        sys.exit(1)
     # Escuchar solamente una conexión.
     socket.listen(1)
     # Acceptar la conexión.
     c, _ = socket.accept()
 else:
-    socket.connect(conn)
+    try: socket.connect(conn) # Conectar como cliente.
+    except OSError:
+        print('Esta dirección no tiene servidor.')
+        pause()
+        sys.exit(1)
 
 # Crear el protocolo.
 if server: t = Transfer(c)
@@ -55,11 +98,20 @@ if nm: repl.nickname = nm
 
 # Iniciar el REPL, y manejar los posibles errores.
 try: repl.main_loop()
-except ConnectionBrokenError: print('Conexión finalizada.')
-except ConnectionAbortedError: print('Se ha anulado la conexión.')
+except ConnectionBrokenError: 
+    print('Conexión finalizada.')
+    pause()
+except ConnectionAbortedError: 
+    print('Se ha anulado la conexión.')
+    pause()
 except ConnectionResetError: 
     print('Se ha forzado la interrupción de la conexión.')
+    pause()
 
 # Cerrar las conexiones.
 if server: c.close()
 socket.close()
+
+##############################################################################
+################################### FIN. #####################################
+##############################################################################

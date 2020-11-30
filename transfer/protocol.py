@@ -11,11 +11,11 @@ Define un protocolo de transferencia simple y de alto nivel para Socket.
 ##############################################################################
 
 __author__ = 'Anderson Lizarazo Tellez'
-__date__ = 'Sábado, 28 de Noviembre de 2020.'
+__date__ = 'Lunes, 30 de Noviembre de 2020.'
 __copyright__ = '© 2020, Anderson Lizarazo Tellez.'
 __license__ = 'Aurora License 0.1.'
 __version__ = '0.0.2'
-version_info = __version__.split('.').append('preview')
+version_info = __version__.split('.').append('medium')
 
 ##############################################################################
 ################################# MÓDULOS. ###################################
