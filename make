@@ -30,7 +30,7 @@ PROJECT = path.join(PWD, 'transfer')
 
 PROJECT_VERSION = '0.0.2'
 PROJECT_NAME = 'transfer'
-PROJECT_STATE = 'preview'
+PROJECT_STATE = 'medium'
 
 TARGET = path.join(PWD, 'dist', 'PYZ')
 
