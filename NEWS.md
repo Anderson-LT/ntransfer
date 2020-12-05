@@ -4,6 +4,12 @@
 
 ---
 
+## VERSIÓN 0.0.2 - MEDIUM.
+
+ - Ahora puedes ejecutarlo desde un único archivo PYZ.
+ - Cuando se genera un error, el sistema espera a que presiones una tecla.
+ - Se añadió un sistema de registro.
+
 ## VERSIÓN 0.0.2 - PREVIEW.
 
  - Ahora puedes decidir si quieres descargar algún archivo que te envien.

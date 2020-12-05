@@ -4,8 +4,21 @@
 
 ---
 
-**0.0.2 (En Desarrollo)** Esta versión está en desarrollo, para utilizarla y 
-probarla, deberá desacargar el último commit.
+**0.0.2 _medium_**
+
+ - **config.py** Ahora se soporta el fomato PYZ.
+   - El argumento *file* en las funciones *set_config* y *get_config* ahora aceptan *None* como argumento.
+     - El comportamiento es el mismo.
+     - Es 100 % compatible con *0.0.2 preview*.
+ - Se añadió un nuevo módulo: *utils.json*.
+   - Contiene una función *pause*.
+     - Esta función genera una pausa en el programa hasta que el usuario presione una tecla.
+     - Tiene un argumento *text*, el cual muestra un texto de ayuda al usuario.
+ - **__main__.py** Cuando se genera una excepción, genera una pausa.
+ - Operaciones de registro añadidas, para configurar el registro en el módulo protocol, importe la variable *logger*
+   y configurela a sus necesidades.
+
+**0.0.2 _preview_**
 
  - **protocol.py** Obtener información acerca del proceso de descarga, confirmar el proceso y ofrecer un búffer 
    alternativo.
