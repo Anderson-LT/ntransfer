@@ -12,6 +12,7 @@ Puede informar los *bugs* que encuentre en la zona *ISSUES*...
    caracteres no válidos como _*_, se prodce un error.
  - Los ajustes de colores en el archivo *ntp.json* no surten efecto.
  - Hay algunos errores que cierran la ventana de forma repentina.
+ - Al tener las operaciones de registro en modo *DEBUG* y mostrar una barra de estado, se genera una excepción.
 
 ## Historial de errores (parcialmente solucionados):
 
@@ -26,4 +27,4 @@ Puede informar los *bugs* que encuentre en la zona *ISSUES*...
 
 ---
 
-## **ÚLTIMA ACTUALIZACIÓN:** *Lunes, 30 de Nobiembre de 2020.*
+## **ÚLTIMA ACTUALIZACIÓN:** *Viernes, 4 de Diciembre de 2020.*
