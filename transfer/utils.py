@@ -11,10 +11,27 @@ Utilidades para Nightly Transfer.
 ##############################################################################
 
 # Módulos de la librería estándar.
+import logging
 from typing import Text
 
 # Módulos del PyPI.
 from prompt_toolkit.shortcuts.prompt import prompt, KeyBindings, Keys
+
+##############################################################################
+############################# CONSTANTES .####################################
+##############################################################################
+
+LOG_FORMAT = logging.Formatter(
+    fmt='NTRANSFER: {levelname}: {name}: {message} [{asctime}].',
+    datefmt='%I:%M-%S %p',
+    style='{',
+)
+
+LOG_FORMAT_FILE = logging.Formatter(
+    fmt='{levelname}: {message} [{asctime}].',
+    datefmt='%I:%M-%S %p',
+    style='{',
+)
 
 ##############################################################################
 ############################## FUNCIONES .####################################

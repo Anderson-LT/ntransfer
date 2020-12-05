@@ -23,6 +23,7 @@ version_info = __version__.split('.').append('medium')
 
 # Módulos de la librería estándar.
 import json
+import logging
 import mimetypes
 import socket
 import zlib
@@ -56,6 +57,16 @@ KB = B * 1024
 ##############################################################################
 
 Socket = NewType('Socket', socket.socket)
+
+##############################################################################
+################################ REGISTROS. ##################################
+##############################################################################
+
+# Crear el registrador.
+logger = logging.getLogger(__name__)
+
+# Configurar los registros para librerías.
+logger.addHandler(logging.NullHandler())
 
 ##############################################################################
 ############################### EXCEPCIONES. #################################
@@ -107,6 +118,7 @@ class Transfer:
         message = []
 
         # Generar la cabecera.
+        logger.info('Generando cabecera de mensaje')
         header = self.__make_header(
             len(data),
             mime,
@@ -114,14 +126,18 @@ class Transfer:
         )
 
         # Armar el mensaje.
+        logger.info('Armando mensaje')
         message.append(self.__len_header(header)) # Longitud de la cabecera.
         message.append(header) # Cabecera.
         message.append(data) # Cuerpo del mensaje.
         
         # Unir el mensaje.
+        logger.info('Uniendo mensaje')
         msg = b''.join(message)
 
         # Enviar el mensaje.
+        logger.debug('La longitud del mensaje en octetos es: %d', len(msg))
+        logger.info('Enviando mensaje')
         self.connection.sendall(msg)
 
         # Devolver la cantidad de bytes enviados.
@@ -143,6 +159,8 @@ class Transfer:
         # Crear el lector en caso de recibir una ruta.
         if isinstance(path, str):
             mode = 'rb' if binary else 'r'
+            logger.debug('Abriendo el archivo "%s" en modo "%s"', path, mode)
+            logger.info('Abriendo archivo')
             path = open(path, mode)
 
         # Obtener el contenido.
@@ -151,13 +169,17 @@ class Transfer:
         # Obtener el tipo MIME.
         mime = mimetypes.guess_type(path.name)
         mime = mime[1] if mime[1] else mime[0]
+        logger.debug('El tipo MIME del archivo es "%s"', mime)
 
         # Obtener la codificación.
         try: encoding = path.encoding
         except AttributeError: encoding = None
+        logger.debug('La codificación obtenida es "%s"', encoding)
 
         # Cerrar el puntero al archivo, si fué creado aquí.
-        if isinstance(path, str): path.close()
+        if isinstance(path, str): 
+            logger.info('Cerrando el archivo')
+            path.close()
 
         return self.send(content, mime, encoding)
 
@@ -187,8 +209,10 @@ class Transfer:
 
         # Obtener tamaño de la cabecera.
         hlen = self._recv(4)
+        logger.debug('La longitud del mensaje en octetos es "%d"', int(hlen))
 
         # Obtener la cabecera y decodificarla.
+        logger.info('Decodificando la cabecera')
         header = self._recv(int(hlen))
         header = header.decode(UTF8)
         header = json.loads(header)
@@ -197,11 +221,15 @@ class Transfer:
         size = header['size']
 
         # Verificar la obtención del mensaje.
+        logger.info('Esperando confirmación del mensaje')
         save = confirm(header)
 
         # Configurar el búffer.
-        if buffer is None: msg = [] # Crear un buffer.
+        if buffer is None: 
+            logger.debug('Usando búffer por defecto')
+            msg = [] # Crear un buffer.
         else:
+            logger.debug('Usando búffer externo')
             msg = FakeClass # Falsear lista.
             msg.append = buffer # Añadir el buffer como método.
 
@@ -210,6 +238,7 @@ class Transfer:
         per_cent(0) # Mostrar el porcentaje 0.
 
         # Recibir el mensaje por partes.
+        logger.info('Recibindo el mensaje por partes')
         while rec < size: 
             if rec < bufsize: # En caso de ser la última parte del mensaje.
                 bufsize = size - rec # Fijar el bufér al tamaño del mensaje.
@@ -224,6 +253,7 @@ class Transfer:
 
         if buffer is None: 
             # Juntar todas las partes del mensaje.
+            logger.info('Uniendo partes del mensaje')
             if save: content = b''.join(msg)
             else: content = None
         else: content = None
@@ -235,6 +265,7 @@ class Transfer:
     version=VERSION):
 
         # Armar la cabecera.
+        logger.info('Armando la cabecera')
         header = {
             'protocol': protocol,
             'version': version,
@@ -244,6 +275,7 @@ class Transfer:
         }
 
         # Codificar la cabecera.
+        logger.info('Codificando la cabecera')
         header = json.dumps(header, 
             ensure_ascii=True, 
             indent=None, 
@@ -257,6 +289,7 @@ class Transfer:
     def __read_header(self, header):
 
         # Descodificar la cabecera.
+        logger.info('Leyendo la cabecera')
         header = header.decode(UTF8)
         header = json.loads(header)
 
